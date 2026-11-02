@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quina.Core", "src\Quina.Core\Quina.Core.csproj", "{C39D7A4C-7F8C-5842-9E69-E1D8B5D8A906}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quina.Infrastructure", "src\Quina.Infrastructure\Quina.Infrastructure.csproj", "{A355B3D4-8B85-5DF8-9120-39853991C998}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quina.Desktop", "src\Quina.Desktop\Quina.Desktop.csproj", "{902C51AB-0A6F-5F91-9913-C581075CEDC0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quina.Tests", "tests\Quina.Tests\Quina.Tests.csproj", "{F54578F9-5894-5FBD-9809-F1C7AADB8AE8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C39D7A4C-7F8C-5842-9E69-E1D8B5D8A906}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C39D7A4C-7F8C-5842-9E69-E1D8B5D8A906}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C39D7A4C-7F8C-5842-9E69-E1D8B5D8A906}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C39D7A4C-7F8C-5842-9E69-E1D8B5D8A906}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A355B3D4-8B85-5DF8-9120-39853991C998}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A355B3D4-8B85-5DF8-9120-39853991C998}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A355B3D4-8B85-5DF8-9120-39853991C998}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A355B3D4-8B85-5DF8-9120-39853991C998}.Release|Any CPU.Build.0 = Release|Any CPU
+		{902C51AB-0A6F-5F91-9913-C581075CEDC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{902C51AB-0A6F-5F91-9913-C581075CEDC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{902C51AB-0A6F-5F91-9913-C581075CEDC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{902C51AB-0A6F-5F91-9913-C581075CEDC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F54578F9-5894-5FBD-9809-F1C7AADB8AE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F54578F9-5894-5FBD-9809-F1C7AADB8AE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F54578F9-5894-5FBD-9809-F1C7AADB8AE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F54578F9-5894-5FBD-9809-F1C7AADB8AE8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

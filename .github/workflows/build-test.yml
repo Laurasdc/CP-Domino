@@ -1,0 +1,20 @@
+name: Compilar e testar C#
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet restore Quina.sln
+      - run: dotnet build Quina.sln --no-restore -c Release
+      - run: dotnet test tests/Quina.Tests/Quina.Tests.csproj --no-build -c Release --logger "trx;LogFileName=quina-tests.trx" --results-directory TestResults
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultados-testes
+          path: TestResults/*.trx

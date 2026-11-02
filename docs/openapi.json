@@ -1,0 +1,3806 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Dominó Ponta de Quina — API",
+    "description": "Partidas individuais entre dois jogadores. Solicite um token por e-mail e cole somente o token em Authorize. Depois crie uma partida, ingresse com o segundo jogador e inicie. Consulte o estado antes de agir. JSON usa camelCase e enums numéricos. Em desenvolvimento, a entrega de e-mail depende da configuração SendGrid.",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/identidade/token": {
+      "post": {
+        "tags": [
+          "Identidade"
+        ],
+        "summary": "Solicitar token por e-mail",
+        "description": "Recebe somente e-mail. Retorna 400 com false para endereço inválido ou fora de @fiap.com.br. Endereços FIAP válidos recebem 202 sem corpo, sem revelar se a conta já existia. O token é reutilizável até revogação. Limite em dez minutos: cinco solicitações por e-mail e 50 por IP de origem.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarTokenRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarTokenRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Solicitação processada, sem corpo e sem revelar cadastro. Entrega por e-mail quando elegível."
+          },
+          "400": {
+            "description": "E-mail malformado ou fora de @fiap.com.br: retorna o booleano false.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "LIMITE_EXCEDIDO: máximo de cinco solicitações por e-mail e 50 por IP de origem a cada dez minutos.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/identidade/sessao": {
+      "get": {
+        "tags": [
+          "Identidade"
+        ],
+        "summary": "Consultar sessão autenticada",
+        "description": "Retorna o identificador do usuário associado ao token Bearer apresentado. O token pode ser reutilizado em diversos acessos e clientes até revogação, sem expiração automática.",
+        "responses": {
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/identidade/tokens/revogacao": {
+      "post": {
+        "tags": [
+          "Identidade"
+        ],
+        "summary": "Revogar o token atual",
+        "description": "Revoga o token Bearer do cabeçalho Authorization. Após a revogação, chamadas com esse token recebem 401.",
+        "responses": {
+          "204": {
+            "description": "Token revogado; sem corpo."
+          },
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/jogadores": {
+      "get": {
+        "tags": [
+          "Jogadores"
+        ],
+        "summary": "Listar meus jogadores",
+        "description": "Lista somente os perfis da conta autenticada, com o estado de ativação e sem segredos.",
+        "responses": {
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PerfilJogador"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PerfilJogador"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PerfilJogador"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Jogadores"
+        ],
+        "summary": "Criar jogador",
+        "description": "Cria um perfil da conta autenticada. Nome entre 1 e 150 caracteres; a API atribui o identificador.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarJogadorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarJogadorRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarJogadorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilJogador"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilJogador"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilJogador"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/jogadores/{jogadorId}/ativar-cliente": {
+      "post": {
+        "tags": [
+          "Jogadores"
+        ],
+        "summary": "Ativar jogador neste cliente",
+        "description": "O cliente gera e guarda 32 bytes aleatórios em 64 caracteres hexadecimais antes do envio. A mesma chave permite repetir uma ativação; outra chave recebe JOGADOR_JA_ATIVO. Não há expiração ou tomada automática do jogador. Envie essa chave em X-Jogador-Ativacao nas operações do jogador.",
+        "parameters": [
+          {
+            "name": "jogadorId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtivarJogadorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtivarJogadorRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtivarJogadorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilJogador"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilJogador"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilJogador"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "JOGADOR_JA_ATIVO: este perfil já está reservado por outra chave de ativação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/jogadores/{jogadorId}/desativar-cliente": {
+      "delete": {
+        "tags": [
+          "Jogadores"
+        ],
+        "summary": "Liberar jogador deste cliente",
+        "description": "Libera explicitamente a ativação usando a chave atual. Não há liberação por fechamento, desconexão ou tempo; após a liberação outro cliente pode ativar o jogador.",
+        "parameters": [
+          {
+            "name": "jogadorId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Jogador-Ativacao",
+            "in": "header",
+            "description": "Chave secreta da ativação do jogador selecionado, preservada pelo cliente. Não é o token da conta.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilJogador"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilJogador"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilJogador"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/partidas": {
+      "get": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Listar partidas disponíveis",
+        "description": "Retorna partidas aguardando adversário, com exatamente um participante. A vaga é revalidada no ingresso.",
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PartidaDisponivel"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PartidaDisponivel"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PartidaDisponivel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Criar partida",
+        "description": "Cria uma partida e registra o solicitante como primeiro participante. Retorna seu estado inicial.",
+        "parameters": [
+          {
+            "name": "X-Jogador-Ativacao",
+            "in": "header",
+            "description": "Chave secreta da ativação do jogador selecionado, preservada pelo cliente. Não é o token da conta.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarPartidaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarPartidaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarPartidaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaParticipante"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaParticipante"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaParticipante"
+                }
+              }
+            }
+          }
+        },
+        "callbacks": {
+          "estadoAlterado": {
+            "{$request.body#/webhook}": {
+              "post": {
+                "summary": "Estado privado da participação",
+                "description": "Compatibilidade para clientes que informam webhook. O fluxo recomendado consulta /atualizacoes. Após commit, entrega ao menos uma vez; deduplicar eventoId e ordenar versaoEstado. HMAC-SHA256 do instante + ponto + bytes UTF-8 exatos do corpo; validar assinatura e janela de 5 minutos. Nunca recebe Bearer.",
+                "parameters": [
+                  {
+                    "name": "X-Domino-Evento",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "name": "X-Domino-Instante",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "name": "X-Domino-Assinatura",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "eventoId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "partidaId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "participacaoId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "versaoEstado": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "tipo": {
+                            "type": "string"
+                          },
+                          "ocorridoEmUtc": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "estado": {
+                            "type": "object",
+                            "properties": {
+                              "partidaId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "versaoEstado": {
+                                "type": "integer",
+                                "format": "int64"
+                              },
+                              "situacao": {
+                                "enum": [
+                                  "aguardandoInicio",
+                                  "emAndamento",
+                                  "encerrada"
+                                ],
+                                "type": "string"
+                              },
+                              "numeroRodada": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "jogadorDoTurnoId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "nullable": true
+                              },
+                              "minhaMao": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/components/schemas/PecaPartida"
+                                },
+                                "description": "Pedras privadas do solicitante. Não inclui pedras do adversário.",
+                                "nullable": true
+                              },
+                              "tabuleiro": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/components/schemas/PecaPartida"
+                                },
+                                "nullable": true
+                              },
+                              "participantes": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/components/schemas/ResumoParticipantePartida"
+                                },
+                                "nullable": true
+                              },
+                              "vencedorId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "nullable": true
+                              },
+                              "proximaAcao": {
+                                "enum": [
+                                  "aguardar",
+                                  "jogarAbertura",
+                                  "jogar",
+                                  "comprar",
+                                  "passar",
+                                  "encerrada"
+                                ],
+                                "type": "string"
+                              },
+                              "pedraAberturaObrigatoria": {
+                                "$ref": "#/components/schemas/PecaPartida"
+                              },
+                              "participacaoId": {
+                                "type": "string",
+                                "format": "uuid"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "required": true
+                },
+                "responses": {
+                  "204": {
+                    "description": "Recebido ou duplicado. Qualquer 2xx confirma."
+                  },
+                  "503": {
+                    "description": "Falha temporária; a API repetirá."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/partidas/{partidaId}/entrar": {
+      "post": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Entrar na partida",
+        "description": "Registra o segundo participante na partida aguardando início. Use versaoEsperada do último estado e um UUID novo em chaveIdempotencia para cada intenção. Repetir a mesma intenção com a mesma chave não duplica a ação. Em 409, atualize a cópia local com estadoAutoritativo.",
+        "parameters": [
+          {
+            "name": "partidaId",
+            "in": "path",
+            "description": "UUID da partida retornado na criação.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Jogador-Ativacao",
+            "in": "header",
+            "description": "Chave secreta da ativação do jogador selecionado, preservada pelo cliente. Não é o token da conta.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngressarRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngressarRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngressarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              }
+            }
+          }
+        },
+        "callbacks": {
+          "estadoAlterado": {
+            "{$request.body#/webhook}": {
+              "post": {
+                "summary": "Estado privado da participação",
+                "description": "Compatibilidade para clientes que informam webhook. O fluxo recomendado consulta /atualizacoes. Após commit, entrega ao menos uma vez; deduplicar eventoId e ordenar versaoEstado. HMAC-SHA256 do instante + ponto + bytes UTF-8 exatos do corpo; validar assinatura e janela de 5 minutos. Nunca recebe Bearer.",
+                "parameters": [
+                  {
+                    "name": "X-Domino-Evento",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "name": "X-Domino-Instante",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "name": "X-Domino-Assinatura",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "eventoId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "partidaId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "participacaoId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "versaoEstado": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "tipo": {
+                            "type": "string"
+                          },
+                          "ocorridoEmUtc": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "estado": {
+                            "type": "object",
+                            "properties": {
+                              "partidaId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "versaoEstado": {
+                                "type": "integer",
+                                "format": "int64"
+                              },
+                              "situacao": {
+                                "enum": [
+                                  "aguardandoInicio",
+                                  "emAndamento",
+                                  "encerrada"
+                                ],
+                                "type": "string"
+                              },
+                              "numeroRodada": {
+                                "type": "integer",
+                                "format": "int32"
+                              },
+                              "jogadorDoTurnoId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "nullable": true
+                              },
+                              "minhaMao": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/components/schemas/PecaPartida"
+                                },
+                                "description": "Pedras privadas do solicitante. Não inclui pedras do adversário.",
+                                "nullable": true
+                              },
+                              "tabuleiro": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/components/schemas/PecaPartida"
+                                },
+                                "nullable": true
+                              },
+                              "participantes": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/components/schemas/ResumoParticipantePartida"
+                                },
+                                "nullable": true
+                              },
+                              "vencedorId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "nullable": true
+                              },
+                              "proximaAcao": {
+                                "enum": [
+                                  "aguardar",
+                                  "jogarAbertura",
+                                  "jogar",
+                                  "comprar",
+                                  "passar",
+                                  "encerrada"
+                                ],
+                                "type": "string"
+                              },
+                              "pedraAberturaObrigatoria": {
+                                "$ref": "#/components/schemas/PecaPartida"
+                              },
+                              "participacaoId": {
+                                "type": "string",
+                                "format": "uuid"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "required": true
+                },
+                "responses": {
+                  "204": {
+                    "description": "Recebido ou duplicado. Qualquer 2xx confirma."
+                  },
+                  "503": {
+                    "description": "Falha temporária; a API repetirá."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/partidas/{partidaId}/iniciar": {
+      "post": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Iniciar partida",
+        "description": "Inicia a partida quando as pré-condições estiverem atendidas e distribui as pedras. Use versaoEsperada do último estado e um UUID novo em chaveIdempotencia para cada intenção. Repetir a mesma intenção com a mesma chave não duplica a ação. Em 409, atualize a cópia local com estadoAutoritativo.",
+        "parameters": [
+          {
+            "name": "partidaId",
+            "in": "path",
+            "description": "UUID da partida retornado na criação.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Jogador-Ativacao",
+            "in": "header",
+            "description": "Chave secreta da ativação do jogador selecionado, preservada pelo cliente. Não é o token da conta.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcaoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcaoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcaoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/partidas/{partidaId}": {
+      "get": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Consultar meu estado",
+        "description": "Retorna a mão do solicitante, tabuleiro, turno, pontuação e versão. Não revela a mão do adversário.",
+        "parameters": [
+          {
+            "name": "partidaId",
+            "in": "path",
+            "description": "UUID da partida retornado na criação.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "jogadorId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Jogador-Ativacao",
+            "in": "header",
+            "description": "Chave secreta da ativação do jogador selecionado, preservada pelo cliente. Não é o token da conta.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaParticipante"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaParticipante"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaParticipante"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/partidas/{partidaId}/atualizacoes": {
+      "get": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Consultar atualizações da partida",
+        "description": "Consulta a visão privada do jogador. Informe versaoConhecida: retorna 204 quando nada mudou, ou 200 com o estado atual quando a versão é diferente. Consulte periodicamente enquanto a partida estiver aberta.",
+        "parameters": [
+          {
+            "name": "partidaId",
+            "in": "path",
+            "description": "UUID da partida retornado na criação.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "jogadorId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "versaoConhecida",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "X-Jogador-Ativacao",
+            "in": "header",
+            "description": "Chave secreta da ativação do jogador selecionado, preservada pelo cliente. Não é o token da conta.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaParticipante"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaParticipante"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaParticipante"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Sem alteração desde versaoConhecida; sem corpo."
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/partidas/{partidaId}/visualizar": {
+      "get": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Observar partida",
+        "description": "Disponível a qualquer usuário autenticado. Retorna tabuleiro e resumos dos participantes sem mãos privadas.",
+        "parameters": [
+          {
+            "name": "partidaId",
+            "in": "path",
+            "description": "UUID da partida retornado na criação.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaObservador"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaObservador"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoPartidaObservador"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/partidas/{partidaId}/jogar": {
+      "post": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Jogar pedra",
+        "description": "Joga uma pedra da própria mão na ponta indicada: lado 0 = esquerda; 1 = direita. Valores da pedra entre 0 e 6. Use versaoEsperada do último estado e um UUID novo em chaveIdempotencia para cada intenção. Repetir a mesma intenção com a mesma chave não duplica a ação. Em 409, atualize a cópia local com estadoAutoritativo.",
+        "parameters": [
+          {
+            "name": "partidaId",
+            "in": "path",
+            "description": "UUID da partida retornado na criação.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Jogador-Ativacao",
+            "in": "header",
+            "description": "Chave secreta da ativação do jogador selecionado, preservada pelo cliente. Não é o token da conta.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JogarRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JogarRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/JogarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/partidas/{partidaId}/comprar": {
+      "post": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Comprar pedra",
+        "description": "Compra uma única pedra quando não há encaixe. Se a pedra encaixar, mantém o turno; caso contrário, ou sem cava, registra passagem e troca o turno. O cliente não escolhe a pedra. Use versaoEsperada do último estado e um UUID novo em chaveIdempotencia para cada intenção. Repetir a mesma intenção com a mesma chave não duplica a ação. Em 409, atualize a cópia local com estadoAutoritativo.",
+        "parameters": [
+          {
+            "name": "partidaId",
+            "in": "path",
+            "description": "UUID da partida retornado na criação.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Jogador-Ativacao",
+            "in": "header",
+            "description": "Chave secreta da ativação do jogador selecionado, preservada pelo cliente. Não é o token da conta.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcaoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcaoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcaoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/partidas/{partidaId}/passar": {
+      "post": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Passar a vez",
+        "description": "Permitido apenas quando não há cava nem pedra compatível na mão. Use versaoEsperada do último estado e um UUID novo em chaveIdempotencia para cada intenção. Repetir a mesma intenção com a mesma chave não duplica a ação. Em 409, atualize a cópia local com estadoAutoritativo.",
+        "parameters": [
+          {
+            "name": "partidaId",
+            "in": "path",
+            "description": "UUID da partida retornado na criação.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Jogador-Ativacao",
+            "in": "header",
+            "description": "Chave secreta da ativação do jogador selecionado, preservada pelo cliente. Não é o token da conta.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcaoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcaoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcaoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacaoAcaoPartida"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/partidas/{partidaId}/resultado": {
+      "get": {
+        "tags": [
+          "Partidas"
+        ],
+        "summary": "Consultar resultado e histórico",
+        "description": "Retorna situação, vencedor, pontuação e eventos permitidos ao participante solicitante.",
+        "parameters": [
+          {
+            "name": "partidaId",
+            "in": "path",
+            "description": "UUID da partida retornado na criação.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "jogadorId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Jogador-Ativacao",
+            "in": "header",
+            "description": "Chave secreta da ativação do jogador selecionado, preservada pelo cliente. Não é o token da conta.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "ENTRADA_INVALIDA: revise os campos. Erros de desserialização podem ser rejeitados pelo framework sem este envelope JSON.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "NAO_AUTENTICADO: token ausente, inválido ou revogado.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SEM_PERMISSAO: usuário sem permissão para a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PARTIDA_INDISPONIVEL: partida não encontrada ou indisponível ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLITO_DE_ESTADO: atualize a cópia local com estadoAutoritativo antes de uma nova intenção.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regra rejeitada: ESTADO_INVALIDO, FORA_DO_TURNO, PECA_AUSENTE, ENCAIXE_INVALIDO ou PASSAGEM_NAO_PERMITIDA. Não houve alteração.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ERRO_INTERNO: falha inesperada ao processar a operação.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaErro"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Operação concluída; retorna a visão autorizada ao solicitante.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoHistoricoPartida"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoHistoricoPartida"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoHistoricoPartida"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AcaoRequest": {
+        "type": "object",
+        "properties": {
+          "versaoEsperada": {
+            "type": "integer",
+            "description": "Versão do último estado consultado; usada para detectar ações concorrentes.",
+            "format": "int64"
+          },
+          "chaveIdempotencia": {
+            "type": "string",
+            "description": "UUID novo por intenção. Reutilize a mesma chave somente para repetir a mesma intenção.",
+            "format": "uuid"
+          },
+          "jogadorId": {
+            "type": "string",
+            "description": "Identificador do perfil pertencente à conta autenticada; operações de jogo exigem sua ativação exclusiva.",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "example": {
+          "jogadorId": "11111111-2222-3333-4444-555555555555",
+          "versaoEsperada": 2,
+          "chaveIdempotencia": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        }
+      },
+      "AtivarJogadorRequest": {
+        "type": "object",
+        "properties": {
+          "chaveAtivacao": {
+            "type": "string",
+            "description": "Segredo de 32 bytes aleatórios em 64 caracteres hexadecimais, gerado e guardado pelo cliente antes de ativar. Nunca use o token da conta como chave.",
+            "format": "password",
+            "nullable": true,
+            "writeOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConfirmacaoAcaoPartida": {
+        "type": "object",
+        "properties": {
+          "chaveIdempotencia": {
+            "type": "string",
+            "description": "UUID novo por intenção. Reutilize a mesma chave somente para repetir a mesma intenção.",
+            "format": "uuid"
+          },
+          "acaoIdempotente": {
+            "type": "boolean",
+            "description": "Indica repetição de uma intenção já aceita, sem executar novamente a ação."
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPartidaParticipante"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CriarJogadorRequest": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CriarPartidaRequest": {
+        "type": "object",
+        "properties": {
+          "pontuacaoAlvo": {
+            "type": "integer",
+            "description": "Pontuação positiva necessária para vencer a partida.",
+            "format": "int32"
+          },
+          "jogadorId": {
+            "type": "string",
+            "description": "Identificador do perfil pertencente à conta autenticada; operações de jogo exigem sua ativação exclusiva.",
+            "format": "uuid"
+          },
+          "webhook": {
+            "type": "string",
+            "description": "Opcional para compatibilidade com clientes antigos. Clientes novos consultam /atualizacoes e não precisam enviar webhook.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "example": {
+          "pontuacaoAlvo": 50,
+          "jogadorId": "11111111-2222-3333-4444-555555555555"
+        }
+      },
+      "EstadoPartidaObservador": {
+        "type": "object",
+        "properties": {
+          "partidaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versaoEstado": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoPartida"
+          },
+          "numeroRodada": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "jogadorDoTurnoId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "tabuleiro": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PecaPartida"
+            },
+            "nullable": true
+          },
+          "participantes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumoParticipantePartida"
+            },
+            "nullable": true
+          },
+          "vencedorId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EstadoPartidaParticipante": {
+        "type": "object",
+        "properties": {
+          "partidaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versaoEstado": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoPartida"
+          },
+          "numeroRodada": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "jogadorDoTurnoId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "minhaMao": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PecaPartida"
+            },
+            "description": "Pedras privadas do solicitante. Não inclui pedras do adversário.",
+            "nullable": true
+          },
+          "tabuleiro": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PecaPartida"
+            },
+            "nullable": true
+          },
+          "participantes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumoParticipantePartida"
+            },
+            "nullable": true
+          },
+          "vencedorId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "proximaAcao": {
+            "$ref": "#/components/schemas/ProximaAcaoPartida"
+          },
+          "pedraAberturaObrigatoria": {
+            "$ref": "#/components/schemas/PecaPartida"
+          },
+          "participacaoId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EventoHistoricoPartida": {
+        "type": "object",
+        "properties": {
+          "eventoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jogadorId": {
+            "type": "string",
+            "description": "Identificador do perfil pertencente à conta autenticada; operações de jogo exigem sua ativação exclusiva.",
+            "format": "uuid"
+          },
+          "pecaJogada": {
+            "$ref": "#/components/schemas/PecaPartida"
+          },
+          "lado": {
+            "$ref": "#/components/schemas/LadoJogavel"
+          },
+          "passouVez": {
+            "type": "boolean"
+          },
+          "pontosConcedidos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recebidoEmUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IngressarRequest": {
+        "type": "object",
+        "properties": {
+          "versaoEsperada": {
+            "type": "integer",
+            "description": "Versão do último estado consultado; usada para detectar ações concorrentes.",
+            "format": "int64"
+          },
+          "chaveIdempotencia": {
+            "type": "string",
+            "description": "UUID novo por intenção. Reutilize a mesma chave somente para repetir a mesma intenção.",
+            "format": "uuid"
+          },
+          "jogadorId": {
+            "type": "string",
+            "description": "Identificador do perfil pertencente à conta autenticada; operações de jogo exigem sua ativação exclusiva.",
+            "format": "uuid"
+          },
+          "webhook": {
+            "type": "string",
+            "description": "Opcional para compatibilidade com clientes antigos. Clientes novos consultam /atualizacoes e não precisam enviar webhook.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "example": {
+          "jogadorId": "11111111-2222-3333-4444-555555555555",
+          "versaoEsperada": 2,
+          "chaveIdempotencia": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        }
+      },
+      "JogarRequest": {
+        "type": "object",
+        "properties": {
+          "valorA": {
+            "type": "integer",
+            "description": "Valor da ponta da pedra, entre 0 e 6.",
+            "format": "int32"
+          },
+          "valorB": {
+            "type": "integer",
+            "description": "Valor da ponta da pedra, entre 0 e 6.",
+            "format": "int32"
+          },
+          "lado": {
+            "$ref": "#/components/schemas/LadoJogavel"
+          },
+          "versaoEsperada": {
+            "type": "integer",
+            "description": "Versão do último estado consultado; usada para detectar ações concorrentes.",
+            "format": "int64"
+          },
+          "chaveIdempotencia": {
+            "type": "string",
+            "description": "UUID novo por intenção. Reutilize a mesma chave somente para repetir a mesma intenção.",
+            "format": "uuid"
+          },
+          "jogadorId": {
+            "type": "string",
+            "description": "Identificador do perfil pertencente à conta autenticada; operações de jogo exigem sua ativação exclusiva.",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "example": {
+          "jogadorId": "11111111-2222-3333-4444-555555555555",
+          "versaoEsperada": 2,
+          "chaveIdempotencia": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+          "valorA": 6,
+          "valorB": 5,
+          "lado": 0
+        }
+      },
+      "LadoJogavel": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": "Ponta do tabuleiro: 0 = esquerda; 1 = direita.",
+        "format": "int32"
+      },
+      "PartidaDisponivel": {
+        "type": "object",
+        "properties": {
+          "partidaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pontuacaoAlvo": {
+            "type": "integer",
+            "description": "Pontuação positiva necessária para vencer a partida.",
+            "format": "int32"
+          },
+          "versaoEstado": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PecaPartida": {
+        "type": "object",
+        "properties": {
+          "valorA": {
+            "type": "integer",
+            "description": "Valor da ponta da pedra, entre 0 e 6.",
+            "format": "int32"
+          },
+          "valorB": {
+            "type": "integer",
+            "description": "Valor da ponta da pedra, entre 0 e 6.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PerfilJogador": {
+        "type": "object",
+        "properties": {
+          "jogadorId": {
+            "type": "string",
+            "description": "Identificador do perfil pertencente à conta autenticada; operações de jogo exigem sua ativação exclusiva.",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string",
+            "nullable": true
+          },
+          "ativo": {
+            "type": "boolean"
+          },
+          "ativadoEmUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProximaAcaoPartida": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "RespostaErro": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "estadoAutoritativo": {
+            "$ref": "#/components/schemas/EstadoPartidaParticipante"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResultadoHistoricoPartida": {
+        "type": "object",
+        "properties": {
+          "partidaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoPartida"
+          },
+          "versaoEstado": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "vencedorId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "participantes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumoParticipantePartida"
+            },
+            "nullable": true
+          },
+          "eventos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventoHistoricoPartida"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResumoParticipantePartida": {
+        "type": "object",
+        "properties": {
+          "jogadorId": {
+            "type": "string",
+            "description": "Identificador do perfil pertencente à conta autenticada; operações de jogo exigem sua ativação exclusiva.",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string",
+            "nullable": true
+          },
+          "pontuacao": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantidadePedrasNaMao": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ehVez": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SessaoResponse": {
+        "type": "object",
+        "properties": {
+          "usuarioId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SituacaoPartida": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "description": "0 = aguardando início; 1 = em andamento; 2 = encerrada.",
+        "format": "int32"
+      },
+      "SolicitarTokenRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "E-mail FIAP que receberá o token; a conta é criada se ainda não existir.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "example": {
+          "email": "aluno@fiap.com.br"
+        }
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Token opaco recebido por e-mail (não é JWT). Informe somente o token, sem o prefixo Bearer.",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+ "version":"2.0.0",
+ "tasks":[
+  {"label":"Quina: compilar","type":"process","command":"dotnet","args":["build","Quina.sln"],"problemMatcher":"$msCompile","group":{"kind":"build","isDefault":true}},
+  {"label":"Quina: executar","type":"process","command":"dotnet","args":["run","--project","src/Quina.Desktop/Quina.Desktop.csproj"],"problemMatcher":"$msCompile"},
+  {"label":"Quina: testar","type":"process","command":"dotnet","args":["test","tests/Quina.Tests/Quina.Tests.csproj","--logger","trx;LogFileName=quina-tests.trx","--results-directory","TestResults"],"problemMatcher":"$msCompile","group":{"kind":"test","isDefault":true}}
+ ]
+}

@@ -1,0 +1,6 @@
+{
+ "version":"0.2.0",
+ "configurations":[
+  {"name":"Quina • WPF (Windows)","type":"coreclr","request":"launch","preLaunchTask":"Quina: compilar","program":"${workspaceFolder}/src/Quina.Desktop/bin/Debug/net8.0-windows/Quina.dll","cwd":"${workspaceFolder}","console":"internalConsole","stopAtEntry":false}
+ ]
+}

@@ -1,0 +1,11 @@
+bin/
+obj/
+TestResults/
+artifacts/
+.vs/
+*.user
+*.suo
+*.log
+.env
+credentials.bin
+*.tmp
