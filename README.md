@@ -1,5 +1,13 @@
 # QUINA — Dominó Ponta de Quina em C#
 
+## Integrantes
+
+| Laura Souza | 556320 |
+| Vinicius Henrique | 556908 |
+| Gustavo Pierre | 558928 |
+| Enzo Dias | 558225 |
+| Gabriel Belo | 551669 |
+
 ## Duração, retomada e ajuda
 
 Escolha a duração na tela inicial. Por rodadas, vence o maior placar ao final;
