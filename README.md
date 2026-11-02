@@ -2,11 +2,11 @@
 
 ## Integrantes
 
-# Laura Souza - 556320
-# Vinicius Henrique - 556908 
-# Gustavo Pierre - 558928 
-# Enzo Dias - 558225 
-# Gabriel Belo - 551669 
+## Laura Souza - 556320
+## Vinicius Henrique - 556908 
+## Gustavo Pierre - 558928 
+## Enzo Dias - 558225 
+## Gabriel Belo - 551669 
 
 ## Duração, retomada e ajuda
 
